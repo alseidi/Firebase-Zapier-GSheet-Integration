@@ -5,9 +5,12 @@ admin.initializeApp();
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
 //
-exports.newTimeSheet = functions.https.onRequest((request, response) => {
-  // console.log('Request data from zapier: ==========', request.body);
-  // response.send("Hello from Firebase!");
-  // TODO: write req.body into google sheet
+exports.trackSheet = functions.https.onRequest((request, response) => {
+  // TODO: Track records to Google sheet
+  console.log('=== Sheet data from zapier: ',  request.body);
+});
+
+exports.notifySlack = functions.https.onRequest((request, response) => {
   // TODO: send notification to slack channel
+  console.log('=== Slack data from zapier: ', request.body);
 });
