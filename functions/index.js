@@ -14,9 +14,11 @@ exports.monitorHarvest = functions.https.onRequest(async (req, res) => {
   const monitorParams = { hours, notes, task, timerStartedAt, firstName, lastName, roles };
   if (notes) {
     if (!timerStartedAt) {
+      // Manual time entry
       sendSlackNotification(monitorParams);
     }
   } else {
+    // Time entry with no comments
     sendSlackNotification(monitorParams);
   }
   res.status(200).send("Monitored time entry successfully!");

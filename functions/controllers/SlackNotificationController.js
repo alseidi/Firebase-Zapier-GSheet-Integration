@@ -1,3 +1,5 @@
+const functions = require('firebase-functions');
+
 const getSlackWebhook = (roles) => {
 
   /* determine roles here.
@@ -6,7 +8,7 @@ const getSlackWebhook = (roles) => {
   */
   console.log("Roles For Determining Channels", roles);
   const IncomingWebhook = require('@slack/client').IncomingWebhook;
-  const url = "https://hooks.slack.com/services/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";
+  const url = functions.config().slack.url;
   return new IncomingWebhook(url);
 }
 
