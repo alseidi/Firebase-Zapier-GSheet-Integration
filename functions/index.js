@@ -12,17 +12,18 @@ exports.monitorHarvest = functions.https.onRequest(async (req, res) => {
   const user = await getHarvestUser(userId);
   const { first_name: firstName, last_name: lastName, roles } = user;
 
-  const monitorParams = { hours, notes, task, timerStartedAt, firstName, lastName, roles, createdAt };
+  const monitorSlackParams = { hours, notes, task, timerStartedAt, firstName, lastName, roles, createdAt };
+  const monitorSheetParams = { hours, notes, task, timerStartedAt, firstName, lastName, userId, createdAt };
   if (notes) {
     if (!timerStartedAt) {
       // Manual time entry
-      sendSlackNotification(monitorParams);
-      publishToGoogleSheet(monitorParams);
+      sendSlackNotification(monitorSlackParams);
+      publishToGoogleSheet(monitorSheetParams);
     }
   } else {
     // Time entry with no comments
-    sendSlackNotification(monitorParams);
-    publishToGoogleSheet(monitorParams);
+    sendSlackNotification(monitorSlackParams);
+    publishToGoogleSheet(monitorSheetParams);
   }
   res.status(200).send("Monitored time entry successfully!");
 });

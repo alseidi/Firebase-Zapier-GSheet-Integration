@@ -14,9 +14,6 @@ const http = (
     "Harvest-Account-ID": `${HARVEST_ACCOUNT_ID}`
   };
   axios.defaults.baseURL = BASE_URL;
-  console.log("===== baseUrl: ", BASE_URL);
-  console.log("===== token: ", ACCESS_TOKEN);
-  console.log("===== account id: ", HARVEST_ACCOUNT_ID);
   return axios.request({
     headers,
     url,

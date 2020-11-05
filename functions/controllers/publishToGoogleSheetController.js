@@ -2,29 +2,47 @@ const functions = require('firebase-functions');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { generateSheetRecord } = require("../utils/getRecord");
 
-const doc = new GoogleSpreadsheet(functions.config().auth.sheetid);
-
 const publishToGoogleSheet = async (params) => {
-  const { date, event } = generateSheetRecord(params);
-  await doc.useServiceAccountAuth(require('../credentials.json'));
-  await doc.loadInfo();
-
-  // add sheet at the first time
-  const newSheet = await doc.addSheet({ title: 'Harvest Time Track', headerValues: ['date', 'event'] });
-
-  // add Header at the first time
-  const rows = await newSheet.getRows();
-  rows[0].date = "Date";
-  rows[0].event = "Event";
-  await rows[0].save();
-
-  // add a row to the existing sheet
-  await newSheet.addRow({ date, event });
-
   try {
+    // use service account creds and loads document properties and worksheets.
+    const doc = new GoogleSpreadsheet(functions.config().auth.sheetid);
+    await doc.useServiceAccountAuth(require('../credentials.json'));
+    await doc.loadInfo();
 
-  } catch (err) {
+    // generate the content of the record being added.
+    const { date, event } = generateSheetRecord(params);
 
+    const { firstName, lastName, userId } = params;
+
+    const addToExistingWorkSheet = async (sheet) => {
+      await sheet.addRow({ Date: date, Event: event });
+    }
+
+    const createNewWorkSheet = async () => {
+      const newSheet = await doc.addSheet({ title: `${firstName}-${lastName}-${userId}`, headerValues: ['Date', 'Event'] });
+
+      // add a row
+      await newSheet.addRow({ Date: date, Event: event });
+    }
+
+    let isPresent = false;
+    let existingSheetId = 0;
+    for (let i = 0; i < doc.sheetCount; i++) {
+      if (doc.sheetsByIndex[i].title.includes(userId)) {
+        isPresent = true;
+        existingSheetId = i;
+        break;
+      }
+    }
+    if (isPresent) {
+      // add a record to the existing worksheet.
+      addToExistingWorkSheet(doc.sheetsByIndex[existingSheetId]);
+    } else {
+      // add a sheet for the user who is not recorded yet in the spreadsheets.
+      createNewWorkSheet();
+    }
+  } catch (error) {
+    console.log('error', error);
   }
 }
 
