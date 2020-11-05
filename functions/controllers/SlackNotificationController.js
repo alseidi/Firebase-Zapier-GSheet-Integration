@@ -7,7 +7,7 @@ const getSlackWebhook = (roles) => {
   *  Just hardcoded a channel for now.
   */
   console.log("Roles For Determining Channels", roles);
-  const IncomingWebhook = require('@slack/client').IncomingWebhook;
+  const { IncomingWebhook } = require('@slack/webhook');
   const url = functions.config().slack.url;
   return new IncomingWebhook(url);
 }
@@ -20,18 +20,17 @@ const sendSlackNotification = async (params) => {
   const message = `Name: ${firstName} ${lastName}, Hours: ${hours}, Notes: ${notes}, Task: ${task}, Manual Time Entry: ${manualTimeEntry}`;
 
   try {
-    getSlackWebhook(roles).send(message, function (err, header, statusCode, body) {
-      if (err) {
-        console.log('Error:', err);
-      } else {
-        console.log('Received', statusCode, 'from Slack');
-      }
-    });
+    getSlackWebhook(roles).send({ text: message });
   } catch (err) {
     console.log(err);
   }
 }
 
+const sendWeekDayNotification = async (message, roles = []) => {
+  getSlackWebhook(roles).send({ text: message });
+}
+
 module.exports = {
-  sendSlackNotification
+  sendSlackNotification,
+  sendWeekDayNotification
 }

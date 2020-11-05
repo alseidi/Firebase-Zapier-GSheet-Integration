@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { sendSlackNotification } = require("./controllers/SlackNotificationController");
 const { publishToGoogleSheet } = require("./controllers/publishToGoogleSheetController");
-const { getHarvestUser } = require("./controllers/GetHarvestUserController");
+const { getHarvestUser, notifyWeekDayInfo } = require("./controllers/HarvestController");
 
 admin.initializeApp();
 
@@ -27,3 +27,11 @@ exports.monitorHarvest = functions.https.onRequest(async (req, res) => {
   }
   res.status(200).send("Monitored time entry successfully!");
 });
+
+exports.monitorWeekDaySubmission = functions.pubsub.schedule('53 13 * * 1,2,3,4,5')
+  .timeZone('America/New_York')
+  .onRun(() => {
+    console.log("cron job monitor");
+    notifyWeekDayInfo();
+    return null;
+  })
