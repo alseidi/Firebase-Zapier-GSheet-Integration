@@ -29,7 +29,7 @@ const notifyWeekDayInfo = async () => {
     const now = dayjs().toDate();
     const entryResponse = await http(`/time_entries?from=${now}`, "GET");
     const { timeEntries } = entryResponse.data.time_entries;
-    if (timeEntries.length = 0) {
+    if (timeEntries.length === 0) {
       // send slack notification saying no time entry for all users
       const message = "No time entry today for all harvest users!";
       sendWeekDayNotification(message);
