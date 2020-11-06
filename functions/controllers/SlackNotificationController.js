@@ -13,11 +13,10 @@ const getSlackWebhook = (roles) => {
 }
 
 const sendSlackNotification = async (params) => {
-  let { hours, notes, task, firstName, lastName, timerStartedAt, roles } = params;
+  const { hours, notes, task, firstName, lastName, timerStartedAt, roles } = params;
 
-  notes = notes ? notes : "No Comment Submitted";
   const manualTimeEntry = timerStartedAt ? "No" : "Yes";
-  const message = `Name: ${firstName} ${lastName}, Hours: ${hours}, Notes: ${notes}, Task: ${task}, Manual Time Entry: ${manualTimeEntry}`;
+  const message = `Name: ${firstName} ${lastName}, Hours: ${hours}, Notes: ${notes || "No Comment Submitted"}, Task: ${task}, Manual Time Entry: ${manualTimeEntry}`;
 
   try {
     getSlackWebhook(roles).send({ text: message });

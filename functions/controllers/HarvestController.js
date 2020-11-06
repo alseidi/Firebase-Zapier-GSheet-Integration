@@ -1,15 +1,7 @@
-const { http } = require("../utils/http");
 const dayjs = require("dayjs");
+const { http } = require("../utils/http");
+const { convertTimeZone } = require("../utils/util");
 const { sendWeekDayNotification } = require("./SlackNotificationController");
-
-const getHarvestUser = async (userId) => {
-  try {
-    const response = await http(`/users/${userId}`, "GET");
-    return response.data;
-  } catch (err) {
-    console.log(err);
-  }
-}
 
 const notifyWeekDayInfo = async () => {
   try {
@@ -26,49 +18,47 @@ const notifyWeekDayInfo = async () => {
     let totalUsersList = [{ userId, name: `${firstName} ${lastName}`, roles }];
 
     // get time entries for today
-    const now = dayjs().toDate();
-    const entryResponse = await http(`/time_entries?from=${now}`, "GET");
-    const { timeEntries } = entryResponse.data.time_entries;
+    const timeNowFormatted = convertTimeZone();
+    const entryResponse = await http(`/time_entries?from=${timeNowFormatted.format("YYYY-MM-DD")}`, "GET");
+    const { time_entries: timeEntries } = entryResponse.data;
     if (timeEntries.length === 0) {
       // send slack notification saying no time entry for all users
       const message = "No time entry today for all harvest users!";
       sendWeekDayNotification(message);
-    }
+    } else {
+      // generate an array of time Entries with user's info and the total hours for each user.
+      let entriesForToday = [];
+      let usersIdListForToday = [];
+      timeEntries.forEach(entry => {
+        if (entriesForToday[entry.user.id]) {
+          let currentEntry = entriesForToday[entry.user.id];
+          currentEntry.hours += entry.hours;
+        } else {
+          entriesForToday[entry.user.id] = { user: entry.user, hours: entry.hours };
+          usersIdListForToday.push(entry.user.id);
+        }
+      });
 
-    // generate an array of time Entries with user's info and the total hours for each user.
-    let entriesForToday = [];
-    let usersIdListForToday = [];
-    timeEntries.foreach(entry => {
-      if (entriesForToday[entry.user.id]) {
-        let currentEntry = entriesForToday[entry.user.id];
-        currentEntry.hours += entry.hours;
-      } else {
-        entriesForToday[entry.user.id] = { user: entry.user, hours: entry.hours };
-        usersIdListForToday.push(entry.user.id);
-      }
-    })
-
-    totalUsersList.forEach(user => {
-      if (usersIdListForToday.includes(user.userId)) {
-        if (entriesForToday[user.userId].hours < 5) {
-          // send slack notification saying less than 5 hours tracked
-          const entryInfo = entriesForToday[user.userId];
-          const message = `Less than 5 hours: ${user.name} tracked ${entryInfo.hours} today.`;
+      totalUsersList.forEach(user => {
+        if (usersIdListForToday.includes(user.userId)) {
+          if (entriesForToday[user.userId].hours < 5) {
+            // send slack notification saying less than 5 hours tracked
+            const entryInfo = entriesForToday[user.userId];
+            const message = `Less than 5 hours: ${user.name} tracked ${entryInfo.hours} hours today.`;
+            sendWeekDayNotification(message, user.roles);
+          }
+        } else {
+          // send slack notification saying no time entry for this user
+          const message = `${user.name} tracked no time today.`;
           sendWeekDayNotification(message, user.roles);
         }
-      } else {
-        // send slack notification saying no time entry for this user
-        const message = `${user.name} tracked no time today.`;
-        sendWeekDayNotification(message, user.roles);
-      }
-    })
-
+      })
+    }
   } catch (err) {
     console.log(err);
   }
 }
 
 module.exports = {
-  getHarvestUser,
   notifyWeekDayInfo
 }

@@ -3,27 +3,15 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { generateSheetRecord } = require("../utils/getRecord");
 
 const publishToGoogleSheet = async (params) => {
+  const { firstName, lastName, userId } = params;
+  // generate the content of the record being added.
+  const { date, event } = generateSheetRecord(params);
+
   try {
-    // use service account creds and loads document properties and worksheets.
     const doc = new GoogleSpreadsheet(functions.config().auth.sheetid);
+    // use service account creds and loads document properties and worksheets.
     await doc.useServiceAccountAuth(require('../credentials.json'));
     await doc.loadInfo();
-
-    // generate the content of the record being added.
-    const { date, event } = generateSheetRecord(params);
-
-    const { firstName, lastName, userId } = params;
-
-    const addToExistingWorkSheet = async (sheet) => {
-      await sheet.addRow({ Date: date, Event: event });
-    }
-
-    const createNewWorkSheet = async () => {
-      const newSheet = await doc.addSheet({ title: `${firstName}-${lastName}-${userId}`, headerValues: ['Date', 'Event'] });
-
-      // add a row
-      await newSheet.addRow({ Date: date, Event: event });
-    }
 
     let isPresent = false;
     let existingSheetId = 0;
@@ -34,12 +22,17 @@ const publishToGoogleSheet = async (params) => {
         break;
       }
     }
+
     if (isPresent) {
       // add a record to the existing worksheet.
-      addToExistingWorkSheet(doc.sheetsByIndex[existingSheetId]);
+      await doc.sheetsByIndex[existingSheetId].addRow({ Date: date, Event: event })
     } else {
       // add a sheet for the user who is not recorded yet in the spreadsheets.
-      createNewWorkSheet();
+      const newSheet = await doc.addSheet({
+        title: `${firstName}-${lastName}-${userId}`,
+        headerValues: ['Date', 'Event']
+      });
+      await newSheet.addRow({ Date: date, Event: event });
     }
   } catch (error) {
     console.log('error', error);
